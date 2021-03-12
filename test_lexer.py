@@ -23,19 +23,6 @@ def test_skip_whitespace():
     assert lexer.pos == 8
     assert lexer.current_char == 'l'
 
-
-def test_integer():
-    lexer = Lexer('142')
-    token = lexer.get_next_token()
-    assert token.type == 'INTEGER'
-    assert token.value == 142
-
-    lexer = Lexer('32168576 if ()')
-    token = lexer.get_next_token()
-    assert token.type == 'INTEGER'
-    assert token.value == 32168576
-
-
 def test_advance():
     lexer = Lexer('a8s64g')
     assert lexer.pos == 0
@@ -92,6 +79,7 @@ def test_name():
     token3 = lexer.get_next_token()
     assert token3.type == 'NAME'
     assert token3.value == 'a'
+
 
 
     

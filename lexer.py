@@ -1,21 +1,25 @@
 # Types
-INTEGER = 'INTEGER'
-PLUS = 'PLUS'
-MINUS = 'MINUS'
-MULT = 'MULT'
-DIV = 'DIV'
-STRING = 'STRING'
-EOF = 'EOF'
-ELSE = 'ELSE'
-IF = 'IF'
-EQUAL = 'EQUAL'
-LPAREN = 'LPAREN'
-RPAREN = 'RPAREN'
-LBRACE = 'LBRACE'
-RBRACE = 'RBRACE'
-NAME = 'NAME'
-PRINT = 'PRINT'
-GRTHAN = 'GRTHAN'
+types = {
+    'int': 'INTEGER',
+    '+': 'PLUS',
+    '-': 'MINUS',
+    '*': 'MULT',
+    '/': 'DIV',
+    'str': 'STRING',
+    'EOF': 'EOF',
+    'else': 'ELSE',
+    'if': 'IF',
+    '=': 'EQUAL',
+    '(': 'LPAREN',
+    ')': 'RPAREN',
+    '{': 'LBRACE',
+    '}': 'RBRACE',
+    'name': 'NAME',
+    'print': 'PRINT',
+    ';': 'SCOLON',
+    '>': 'GRTHAN',
+    '<': 'LSTHAN'
+}
 
 
 class Token(object):
@@ -35,7 +39,7 @@ class Lexer(object):
 
     def get_next_token(self):
         if self.pos > len(self.text) - 1:
-            return Token(EOF, None)
+            return Token('EOF', None)
 
         if self.current_char.isspace():
             self.skip_whitespace()
@@ -43,46 +47,6 @@ class Lexer(object):
         if self.current_char.isdigit():
             token = self.integer()
             return token
-
-        if self.current_char == '+':
-            self.advance()
-            return Token(PLUS, '+')
-
-        if self.current_char == '-':
-            self.advance()
-            return Token(MINUS, '-')
-
-        if self.current_char == '*':
-            self.advance()
-            return Token(MULT, '*')
-
-        if self.current_char == '/':
-            self.advance()
-            return Token(DIV, '/')
-
-        if self.current_char == '(':
-            self.advance()
-            return Token(LPAREN, '(')
-
-        if self.current_char == ')':
-            self.advance()
-            return Token(RPAREN, ')')
-
-        if self.current_char == '{':
-            self.advance()
-            return Token(LBRACE, '{')
-
-        if self.current_char == '}':
-            self.advance()
-            return Token(RBRACE, '}')
-
-        if self.current_char == '=':
-            self.advance()
-            return Token(EQUAL, '=')
-        
-        if self.current_char == '>':
-            self.advance()
-            return Token(GRTHAN, '>')
 
         if self.current_char == '"':
             token = self.string()
@@ -93,7 +57,11 @@ class Lexer(object):
             token = self.name()
             return token
 
-        print(self.current_char)
+        if self.current_char in types:
+            token = Token(types[self.current_char], self.current_char)
+            self.advance()
+            return token
+
         self.error()
 
     def advance(self):
@@ -104,6 +72,7 @@ class Lexer(object):
             self.current_char = self.text[self.pos]
         else:
             self.pos += 1
+            self.current_char = None
 
     def skip_whitespace(self):
         # Skips all the whitespaces
@@ -118,8 +87,8 @@ class Lexer(object):
         while self.current_char.isdigit():
             number += self.current_char
             self.advance()    
-        
-        return Token(INTEGER, int(number))
+
+        return Token('INTEGER', int(number))
 
     def string(self):
         # Returns a STRING token
@@ -134,16 +103,11 @@ class Lexer(object):
             string += self.current_char
             self.advance()
             
+            if self.current_char == '"':
+                self.advance()
+                break
 
-        if self.current_char == '"' and self.pos < len(self.text) - 1:
-            self.advance()
-        elif self.pos == len(self.text) - 1:
-            # If it is the end of the file
-            # Only move the position so lexer 
-            # will get EOF for the next token
-            self.pos += 1
-
-        return Token(STRING, string)
+        return Token('STRING', string)
 
     def name(self):
         # This language only supports alphabetical 
@@ -153,15 +117,18 @@ class Lexer(object):
             name += self.current_char
             self.advance()
 
+            if self.current_char == None:
+                break
+
         # Check if it is PRINT, ELSE or IF
         if name == 'else':
-            return Token(ELSE, 'else')
+            return Token('ELSE', 'else')
         if name == 'if':
-            return Token(IF, 'if')
+            return Token('IF', 'if')
         if name == 'print':
-            return Token(PRINT, 'print')
+            return Token('PRINT', 'print')
 
-        return Token(NAME, name)
+        return Token('NAME', name)
 
     def error(self):
-        raise Exception('LexerError')
+        raise Exception('SyntaxError')
