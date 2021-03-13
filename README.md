@@ -1,4 +1,4 @@
-Simple interpreter that can run these few lines of code ->
+Simple interpreter that can run these few lines of code -> **NOT FINISHED**
 
 ```
 a = 32; 

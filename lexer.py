@@ -18,7 +18,8 @@ types = {
     'print': 'PRINT',
     ';': 'SCOLON',
     '>': 'GRTHAN',
-    '<': 'LSTHAN'
+    '<': 'LSTHAN',
+    'id': 'ID'
 }
 
 
@@ -28,7 +29,13 @@ class Token(object):
         self.type = token_type
 
     def __str__(self):
-        return 'Token(' + str(self.type) + ', ' + str(self.value) + ')'
+        return 'Token({type}, {value})'.format(
+            type=self.type,
+            value=repr(self.value)
+        )
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Lexer(object):
@@ -86,7 +93,10 @@ class Lexer(object):
         number = ''
         while self.current_char.isdigit():
             number += self.current_char
-            self.advance()    
+            self.advance()   
+
+            if self.current_char == None:
+                break 
 
         return Token('INTEGER', int(number))
 
