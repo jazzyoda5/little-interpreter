@@ -19,6 +19,14 @@ class BinOp(AST):
         self.token = self.op
 
 
+class Comparison(AST):
+    def __init__(self, left, op, right):
+        self.left = left
+        self.op = op
+        self.right = right
+        self.token = self.op
+
+
 class UnaryOp(AST):
     def __init__(self, op, expr):
         self.token = self.op = op
@@ -42,11 +50,13 @@ class Var(AST):
         self.token = token
         self.value = token.value
 
+
 class Value(AST):
     # Something that has only a value
     # Like a boolean or a string
     def __init__(self, value):
         self.value = value
+
 
 class Print(AST):
     def __init__(self, expr):
@@ -72,6 +82,9 @@ term   : factor ((MUL | DIV) factor)*
 factor : (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN | variable
 variable  :  NAME | BOOL
 print  :  PRINT (expr | STRING | BOOL)
+ifelse  :  IF comparison LBRACE block RBRACE (ELSE LBRACE block RBRACE)
+comparison  :  VALUE | expr OP expr
+OP  :  GRTHAN | LSTHAN
 """
 
 class Parser(object):
@@ -123,6 +136,10 @@ class Parser(object):
             node = self.assignment()
         elif self.curr_token.type == 'PRINT':
             node = self.print()
+            """
+            elif self.curr_token.type == 'IF':
+                node = self.ifelse()
+            """
         else:
             node = self.empty()
         
@@ -233,6 +250,31 @@ class Parser(object):
         else:
             print('ERROR: ', self.curr_token)
             self.error()
+    """
+    def ifelse(self):
+        self.eat('IF')
+        node = self.comparison()
+        return node
+
+    def comparison(self):
+        self.eat('LPAREN')
+
+        if self.curr_token.type == 'BOOL':
+            node = Value(value=self.curr_token.value)
+        else:
+            left = self.expr()
+            op = self.curr_token
+            if op.type == 'GRTHAN':
+                self.eat('GRTHAN')
+            elif op.type == 'LSTHAN':
+                self.eat('LSTHAN')
+            else:
+                self.error()
+            node = Comparison(left=left, op=op, right=self.expr())
+        
+        return node
+    """
+
     
     def parse(self):
         node = self.block()

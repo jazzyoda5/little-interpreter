@@ -94,6 +94,7 @@ def main():
         parser = Parser(lexer)
         interpreter = Interpreter(parser)
         interpreter.interpret()
+        
     
     
 
