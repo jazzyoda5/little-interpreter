@@ -16,6 +16,7 @@ types = {
     '}': 'RBRACE',
     'name': 'NAME',
     'print': 'PRINT',
+    'bool': 'BOOL',
     ';': 'SCOLON',
     '>': 'GRTHAN',
     '<': 'LSTHAN',
@@ -69,6 +70,7 @@ class Lexer(object):
             self.advance()
             return token
 
+        print(self.current_char)
         self.error()
 
     def advance(self):
@@ -137,6 +139,10 @@ class Lexer(object):
             return Token('IF', 'if')
         if name == 'print':
             return Token('PRINT', 'print')
+        if name == 'True':
+            return Token('BOOL', True)
+        if name == 'False':
+            return Token('BOOL', False)
 
         return Token('NAME', name)
 

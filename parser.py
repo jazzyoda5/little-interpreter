@@ -42,6 +42,16 @@ class Var(AST):
         self.token = token
         self.value = token.value
 
+class Value(AST):
+    # Something that has only a value
+    # Like a boolean or a string
+    def __init__(self, value):
+        self.value = value
+
+class Print(AST):
+    def __init__(self, expr):
+        self.expr = expr
+
 
 class Empty(AST):
     pass
@@ -59,8 +69,9 @@ statement  =  block
 assignment  :  variable EQUAL expr
 expr   : term ((PLUS | MINUS) term)*
 term   : factor ((MUL | DIV) factor)*
-factor : (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN
-variable  :  NAME
+factor : (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN | variable
+variable  :  NAME | BOOL
+print  :  PRINT (expr | STRING | BOOL)
 """
 
 class Parser(object):
@@ -110,17 +121,17 @@ class Parser(object):
     def statement(self):
         if self.curr_token.type == 'NAME':
             node = self.assignment()
+        elif self.curr_token.type == 'PRINT':
+            node = self.print()
         else:
             node = self.empty()
         
-        print('statement node: ', node)
         return node
 
     def assignment(self):
         left = self.variable()
         token = self.curr_token
         self.eat('EQUAL')
-        print('right: ', self.curr_token)
         right = self.expr()
         node = Assign(left, token, right)
         return node
@@ -140,7 +151,6 @@ class Parser(object):
 
         elif token.type == types['int']:
             self.eat('INTEGER')
-            print('factor: ', token)
             return Number(token)
         
         elif token.type == types['(']:
@@ -151,7 +161,6 @@ class Parser(object):
         
         else:
             node = self.variable()
-            print('factor: ', node)
             return node
 
     def expr(self):
@@ -190,20 +199,46 @@ class Parser(object):
     def variable(self):
         node = Var(self.curr_token)
         self.eat('NAME')
-        print('variable node: ', node)
         return node
     
     def empty(self):
         empty = Empty()
-        print('empty node: ', empty)
         return empty
+
+    def print(self):
+        self.eat('PRINT')
+
+        # Print has to be followed by
+        # (). If not, raise a SyntaxError.
+        if self.curr_token.type == types['(']:
+            self.eat(types['('])
+            token = self.curr_token
+            
+            # Can contain a string, a boolean, or an expression
+            if token.type == types['str']:
+                bellow_node = Value(value=self.curr_token.value)
+                node = Print(expr=bellow_node)
+                self.eat(types['str'])
+
+            elif token.type == types['bool']:
+                bellow_node = Value(value=self.curr_token.value)
+                node = Print(expr=bellow_node)
+                self.eat(types['bool'])
+
+            else:
+                node = Print(expr=self.expr())
+            
+            self.eat(types[')'])
+            return node
+        else:
+            print('ERROR: ', self.curr_token)
+            self.error()
     
     def parse(self):
         node = self.block()
         if self.curr_token.type != 'EOF':
             self.error()
         
-        print('main parse node: ', node)
         return node
             
 
