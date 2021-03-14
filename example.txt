@@ -1,2 +1,6 @@
 a = 3 * 3;
-print(a + 3);
+/* Comment 
+That is
+really
+long */
+print("Hihi");

@@ -48,9 +48,12 @@ class Lexer(object):
     def get_next_token(self):
         if self.pos > len(self.text) - 1:
             return Token('EOF', None)
-
+        
         if self.current_char.isspace():
             self.skip_whitespace()
+
+        if self.current_char == '/' and self.peek() == '*':
+            self.skip_comment()
 
         if self.current_char.isdigit():
             token = self.integer()
@@ -83,12 +86,34 @@ class Lexer(object):
             self.pos += 1
             self.current_char = None
 
+    def peek(self):
+        if self.pos < len(self.text) - 1:
+            new_pos = self.pos + 1
+            next_char = self.text[new_pos]
+            return next_char
+        return None
+
     def skip_whitespace(self):
         # Skips all the whitespaces
         while True:
             self.advance()
             if not self.current_char.isspace():
                 break
+
+    def skip_comment(self):
+        # Skip everything until comment is closed off
+        # With */
+        while True:
+            self.advance()
+            if self.current_char == '*' and self.peek() == '/':
+                self.advance()
+                break
+        
+        if self.current_char == '/':
+            self.advance()
+        if self.current_char.isspace():
+            self.skip_whitespace()
+
 
     def integer(self):
         # Returns an INTEGER token

@@ -81,14 +81,14 @@ def main():
         except:
             break
 
-        """
+        
         lexer_check = Lexer(text)
         while True:
             token = lexer_check.get_next_token()
             print(token)
             if token.type == 'EOF':
                 break
-        """
+        
         
         lexer = Lexer(text)
         parser = Parser(lexer)
