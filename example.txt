@@ -1,6 +1,6 @@
-a = 3 * 3;
-/* Comment 
-That is
-really
-long */
-print("Hihi");
+a = 32; 
+if (a > 2) {
+    print("Yayy");
+} else {
+    print(":(");
+}

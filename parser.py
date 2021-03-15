@@ -63,6 +63,13 @@ class Print(AST):
         self.expr = expr
 
 
+class IfStatement(AST):
+    def __init__(self, value, block, elseblock=None):
+        self.value = value
+        self.block = block
+        self.elseblock = elseblock
+
+
 class Empty(AST):
     pass
 
@@ -136,10 +143,10 @@ class Parser(object):
             node = self.assignment()
         elif self.curr_token.type == 'PRINT':
             node = self.print()
-            """
-            elif self.curr_token.type == 'IF':
-                node = self.ifelse()
-            """
+            
+        elif self.curr_token.type == 'IF':
+            node = self.ifelse()
+            
         else:
             node = self.empty()
         
@@ -250,30 +257,53 @@ class Parser(object):
         else:
             print('ERROR: ', self.curr_token)
             self.error()
-    """
+
     def ifelse(self):
         self.eat('IF')
-        node = self.comparison()
+        value = self.ifstatement()
+        self.eat('LBRACE')
+        block=self.block()
+        self.eat('RBRACE')
+        
+        if self.curr_token.type == 'ELSE':
+            self.eat('ELSE')
+            self.eat('LBRACE')
+            elseblock = self.block()
+            self.eat('RBRACE')
+        else:
+            elseblock = None
+
+        node = IfStatement(value=value, block=block, elseblock=elseblock)
+        return node  
+
+
+    def ifstatement(self):
+        self.eat('LPAREN')
+        if self.curr_token.type == 'BOOL':
+            node = Value(value=self.curr_token.value)
+            self.eat('BOOL')
+        else:
+            node = self.comparison()
+
+        self.eat('RPAREN')
+
         return node
 
     def comparison(self):
-        self.eat('LPAREN')
+        left = self.expr()
 
-        if self.curr_token.type == 'BOOL':
-            node = Value(value=self.curr_token.value)
-        else:
-            left = self.expr()
+        if self.curr_token.type == 'LSTHAN':
             op = self.curr_token
-            if op.type == 'GRTHAN':
-                self.eat('GRTHAN')
-            elif op.type == 'LSTHAN':
-                self.eat('LSTHAN')
-            else:
-                self.error()
-            node = Comparison(left=left, op=op, right=self.expr())
-        
+            self.eat('LSTHAN')
+        elif self.curr_token.type == 'GRTHAN':
+            op = self.curr_token
+            self.eat('GRTHAN')
+        else:
+            self.error()
+
+        node = Comparison(left=left, op=op, right=self.expr())
         return node
-    """
+        
 
     
     def parse(self):

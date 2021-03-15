@@ -1,5 +1,19 @@
+import sys
 from lexer import Lexer
 from parser import Parser
+
+##############################################
+# Symbol Table Builder
+##############################################
+
+
+class Symbol(object):
+    pass
+
+
+##############################################
+# Interpreter
+##############################################
 
 
 class NodeVisitor(object):
@@ -26,6 +40,28 @@ class Interpreter(NodeVisitor):
             return self.visit(node.left) * self.visit(node.right)
         elif node.op.type == 'DIV':
             return self.visit(node.left) / self.visit(node.right)
+
+    def visit_IfStatement(self, node):
+        # IfStatement has two attributes
+        # Value: Either a boolean or a comparison
+        # to determine whether it's block should be executed
+        # Block: Points to it's block of code inside {}
+        should_execute = self.visit(node.value)
+
+        if should_execute == True:
+            for child in node.block.children:
+                self.visit(child)
+        elif should_execute == False and node.elseblock is not None:
+            print('Execute elseblock')
+
+    def visit_Comparison(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+
+        if node.op.type == 'LSTHAN':
+            return left < right
+        elif node.op.type == 'GRTHAN':
+            return left > right
 
     def visit_Number(self, node):
         return node.value
@@ -73,27 +109,27 @@ class Interpreter(NodeVisitor):
 
 
 def main():
-    while True:
-        file_path = input('File Path: ')
-        try:
-            f = open(file_path, 'r')
-            text = f.read()
-        except:
-            break
+    file_path = sys.argv[1]
+    try:
+        f = open(file_path, 'r')
+        text = f.read()
+    except:
+        print('Something went wrong.')
 
-        
-        lexer_check = Lexer(text)
-        while True:
-            token = lexer_check.get_next_token()
-            print(token)
-            if token.type == 'EOF':
-                break
-        
-        
-        lexer = Lexer(text)
-        parser = Parser(lexer)
-        interpreter = Interpreter(parser)
-        interpreter.interpret()
+    """
+    lexer_check = Lexer(text)
+    while True:
+        token = lexer_check.get_next_token()
+        print(token)
+        if token.type == 'EOF':
+            break
+    """
+    
+    
+    lexer = Lexer(text)
+    parser = Parser(lexer)
+    interpreter = Interpreter(parser)
+    interpreter.interpret()
         
     
     

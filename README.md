@@ -1,4 +1,4 @@
-Simple interpreter that can run these few lines of code -> **NOT FINISHED**
+Simple interpreter that can run these few lines of code ->
 ```
 a = 32; 
 if (a > 2) {
@@ -8,9 +8,3 @@ if (a > 2) {
 }
 ```
 
-For now handles something like this ->
-```
-a = 3 * 3;
-b = 5;
-print(a + b);
-```
