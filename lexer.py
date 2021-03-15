@@ -52,6 +52,11 @@ class Lexer(object):
         if self.current_char.isspace():
             self.skip_whitespace()
 
+            # Check for EOF
+            if self.current_char == None and self.pos > len(self.text) - 1:
+                return Token('EOF', None)
+
+
         if self.current_char == '/' and self.peek() == '*':
             self.skip_comment()
 
@@ -97,6 +102,8 @@ class Lexer(object):
         # Skips all the whitespaces
         while True:
             self.advance()
+            if self.current_char is None:
+                break
             if not self.current_char.isspace():
                 break
 

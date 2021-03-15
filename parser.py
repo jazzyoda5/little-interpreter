@@ -128,10 +128,21 @@ class Parser(object):
     def statement_list(self):
         node = self.statement()
         results = [node]
+        self.eat('SCOLON')
 
-        while self.curr_token.type == types[';']:
-            self.eat(types[';'])
-            results.append(self.statement())
+        while True:
+            statement = self.statement()
+            results.append(statement)
+
+            if isinstance(statement, IfStatement):
+                # if-else block doesn't require
+                # a closing semicolon -> ';'
+                pass
+            elif self.curr_token.type != 'SCOLON':
+                break
+            else:
+                self.eat('SCOLON')
+            
 
         if self.curr_token.type == 'NAME':
             self.error()

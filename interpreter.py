@@ -52,7 +52,8 @@ class Interpreter(NodeVisitor):
             for child in node.block.children:
                 self.visit(child)
         elif should_execute == False and node.elseblock is not None:
-            print('Execute elseblock')
+            for child in node.elseblock.children:
+                self.visit(child)
 
     def visit_Comparison(self, node):
         left = self.visit(node.left)
@@ -116,20 +117,21 @@ def main():
     except:
         print('Something went wrong.')
 
-    """
+    
     lexer_check = Lexer(text)
     while True:
         token = lexer_check.get_next_token()
         print(token)
         if token.type == 'EOF':
             break
-    """
+    
     
     
     lexer = Lexer(text)
     parser = Parser(lexer)
     interpreter = Interpreter(parser)
     interpreter.interpret()
+    
         
     
     
