@@ -1,26 +1,35 @@
 # Types
 types = {
-    'int': 'INTEGER',
     '+': 'PLUS',
     '-': 'MINUS',
     '*': 'MULT',
     '/': 'DIV',
-    'str': 'STRING',
     'EOF': 'EOF',
-    'else': 'ELSE',
-    'if': 'IF',
     '=': 'EQUAL',
     '(': 'LPAREN',
     ')': 'RPAREN',
     '{': 'LBRACE',
     '}': 'RBRACE',
     'name': 'NAME',
-    'print': 'PRINT',
     'bool': 'BOOL',
     ';': 'SCOLON',
     '>': 'GRTHAN',
     '<': 'LSTHAN',
-    'id': 'ID'
+    'id': 'ID',
+    ':': 'COLON',
+    'type_decl': 'TYPE'
+}
+
+# Special reserved words
+reserved_names = {
+    'print': 'PRINT',
+    'else': 'ELSE',
+    'if': 'IF',
+    'str': 'TYPE',
+    'int': 'TYPE',
+    'bool': 'TYPE',
+    'True': 'BOOL',
+    'False': 'BOOL',
 }
 
 
@@ -164,17 +173,18 @@ class Lexer(object):
             if self.current_char == None:
                 break
 
-        # Check if it is PRINT, ELSE or IF
-        if name == 'else':
-            return Token('ELSE', 'else')
-        if name == 'if':
-            return Token('IF', 'if')
-        if name == 'print':
-            return Token('PRINT', 'print')
-        if name == 'True':
-            return Token('BOOL', True)
-        if name == 'False':
-            return Token('BOOL', False)
+        # Check if it is one of the reserved words
+        res_name_type = reserved_names.get(name)
+        if res_name_type is not None:
+
+            # For booleans assign boolean value 
+            # instead of string
+            if name == 'True':
+                return Token(res_name_type, True)
+            if name == 'False':
+                return Token(res_name_type, False)
+
+            return Token(res_name_type, name)
 
         return Token('NAME', name)
 

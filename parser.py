@@ -39,10 +39,10 @@ class Block(AST):
 
 
 class Assign(AST):
-    def __init__(self, left, op, right):
-        self.left = left
-        self.token = self.op = op
-        self.right = right
+    def __init__(self, name, type=None, value):
+        self.name = name
+        self.type = type
+        self.value = value
 
 
 class Var(AST):
@@ -77,21 +77,23 @@ class Empty(AST):
 """
 GRAMMAR ->
 
-block  :  statement_list 
+block  :  compound_statement
+compound_statement  :  statement_list
 statement_list  :  statement SCOLON
                    statement SCOLON statement_list
 statement  =  block
               assignment
               empty
-assignment  :  variable EQUAL expr
+assignment  :  variable COLON TYPE EQUAL expr
+var_value_change  :  variable EQUAL VALUE | expr
 expr   : term ((PLUS | MINUS) term)*
 term   : factor ((MUL | DIV) factor)*
 factor : (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN | variable
-variable  :  NAME | BOOL
+variable  :  NAME
 print  :  PRINT (expr | STRING | BOOL)
 ifelse  :  IF comparison LBRACE block RBRACE (ELSE LBRACE block RBRACE)
-comparison  :  VALUE | expr OP expr
-OP  :  GRTHAN | LSTHAN
+comparison  :  variable | VALUE | expr op expr
+op  :  GRTHAN | LSTHAN
 """
 
 class Parser(object):
@@ -114,9 +116,6 @@ class Parser(object):
         return node
 
     def compound_statement(self):
-        """
-        compound_statement: BEGIN statement_list END
-        """
         nodes = self.statement_list()
 
         root = Block()
@@ -150,8 +149,9 @@ class Parser(object):
         return results
 
     def statement(self):
-        if self.curr_token.type == 'NAME':
+        if self.curr_token.type == 'NAME':  
             node = self.assignment()
+
         elif self.curr_token.type == 'PRINT':
             node = self.print()
             
@@ -164,31 +164,54 @@ class Parser(object):
         return node
 
     def assignment(self):
-        left = self.variable()
-        token = self.curr_token
+        name = self.variable()
+        # If next token is = 
+        # This means (in correct syntax)
+        # That variable was already previously defined
+        # and that this statement only changes the value and not the type
+        if self.curr_token.type == 'EQUAL':
+            
+
+        # Type must be declared ->
+        self.eat('COLON')
+
+        if self.curr_token.type == 'TYPE':
+            var_type = self.curr_token
+            self.eat('TYPE')
+        else:
+            self.error()
+
         self.eat('EQUAL')
-        right = self.expr()
-        node = Assign(left, token, right)
+        if self.curr_token.type == 'STRING':
+            value = Value(value=self.curr_token.value)
+            self.eat('STRING')
+        elif self.curr_token.type == 'BOOL':
+            value = Value(value=self.curr_token.value)
+            self.eat('BOOL')
+        else:
+            value = self.expr()
+
+        node = Assign(name, var_type, value)
         return node
 
     def factor(self):
         token = self.curr_token
 
-        if token.type == types['+']:
+        if token.type == 'PLUS':
             self.eat(types['+'])
             node = UnaryOp(token, self.factor())
             return node
         
-        elif token.type == types['-']:
+        elif token.type == 'MINUS':
             self.eat(types['-'])
             node = UnaryOp(token, self.factor())
             return node
 
-        elif token.type == types['int']:
+        elif token.type == 'INTEGER':
             self.eat('INTEGER')
             return Number(token)
         
-        elif token.type == types['(']:
+        elif token.type == 'LPAREN':
             node = self.expr()
             self.eat(types['('])
             return node
@@ -245,25 +268,25 @@ class Parser(object):
 
         # Print has to be followed by
         # (). If not, raise a SyntaxError.
-        if self.curr_token.type == types['(']:
-            self.eat(types['('])
+        if self.curr_token.type == 'LPAREN':
+            self.eat('LPAREN')
             token = self.curr_token
             
             # Can contain a string, a boolean, or an expression
-            if token.type == types['str']:
+            if token.type == 'STRING':
                 bellow_node = Value(value=self.curr_token.value)
                 node = Print(expr=bellow_node)
-                self.eat(types['str'])
+                self.eat('STRING')
 
-            elif token.type == types['bool']:
+            elif token.type == 'BOOL':
                 bellow_node = Value(value=self.curr_token.value)
                 node = Print(expr=bellow_node)
-                self.eat(types['bool'])
+                self.eat('BOOL')
 
             else:
                 node = Print(expr=self.expr())
             
-            self.eat(types[')'])
+            self.eat('RPAREN')
             return node
         else:
             print('ERROR: ', self.curr_token)
@@ -272,6 +295,8 @@ class Parser(object):
     def ifelse(self):
         self.eat('IF')
         value = self.ifstatement()
+
+        # if block is wrapped in {}
         self.eat('LBRACE')
         block=self.block()
         self.eat('RBRACE')
@@ -287,12 +312,16 @@ class Parser(object):
         node = IfStatement(value=value, block=block, elseblock=elseblock)
         return node  
 
-
+    # Statement wrapped in ()
+    # that determines if the if block
+    # should run
     def ifstatement(self):
         self.eat('LPAREN')
         if self.curr_token.type == 'BOOL':
             node = Value(value=self.curr_token.value)
             self.eat('BOOL')
+        elif self.curr_token.type == 'NAME':
+            node = self.variable()
         else:
             node = self.comparison()
 

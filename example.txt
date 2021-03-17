@@ -1,13 +1,4 @@
-variable = 3 * 3 - 6;
-var = 70 / 10;
-/*
-I am a
-multiline comment
-*/
-if (variable < var) {
-    print("Whatever1");
-} else {
-    print("Whatever2");
+variable: bool = True;
+if (variable) {
+    print("Hey");
 }
-print("Another print for the lolz!");
-

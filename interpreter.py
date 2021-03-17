@@ -3,15 +3,6 @@ from lexer import Lexer
 from parser import Parser
 
 ##############################################
-# Symbol Table Builder
-##############################################
-
-
-class Symbol(object):
-    pass
-
-
-##############################################
 # Interpreter
 ##############################################
 
@@ -27,8 +18,8 @@ class NodeVisitor(object):
 
 
 class Interpreter(NodeVisitor):
-    def __init__(self, parser):
-        self.parser = parser
+    def __init__(self, tree):
+        self.tree = tree
         self.GLOBAL_SCOPE = {}
     
     def visit_BinOp(self, node):
@@ -67,6 +58,9 @@ class Interpreter(NodeVisitor):
     def visit_Number(self, node):
         return node.value
 
+    # example:
+    # a = 5;
+    # b = -a;
     def visit_UnaryOp(self, node):
         op = node.op.type
         if op == PLUS:
@@ -83,9 +77,9 @@ class Interpreter(NodeVisitor):
         pass
 
     def visit_Assign(self, node):
-        var_name = node.left.value
-        self.GLOBAL_SCOPE[var_name] = self.visit(node.right)
-        
+        print('type: ', node.type.value)
+        var_name = node.name.value
+        self.GLOBAL_SCOPE[var_name] = self.visit(node.value)
 
     def visit_Var(self, node):
         var_name = node.value
@@ -95,6 +89,8 @@ class Interpreter(NodeVisitor):
         else:
             return value
 
+    # For values that are not stored
+    # in variables
     def visit_Value(self, node):
         return node.value
 
@@ -105,7 +101,10 @@ class Interpreter(NodeVisitor):
             print(node.value)
 
     def interpret(self):
-        tree = self.parser.parse()
+        tree = self.tree
+        if tree is None:
+            return None
+
         self.visit(tree)
 
 
@@ -117,23 +116,31 @@ def main():
     except:
         print('Something went wrong.')
 
-    
+    """
     lexer_check = Lexer(text)
     while True:
         token = lexer_check.get_next_token()
         print(token)
         if token.type == 'EOF':
-            break
-    
-    
+            break    
+    """
     
     lexer = Lexer(text)
     parser = Parser(lexer)
-    interpreter = Interpreter(parser)
-    interpreter.interpret()
+    tree = parser.parse()
     
-        
+    from semantic_analizer import SemanticAnalyser
+    sem_analyzer = SemanticAnalyser()
+
+    try:
+        sem_analyzer.visit(tree)
+    except Exception as exc:
+        raise exc
+        return
     
+
+    interpreter = Interpreter(tree)
+    interpreter.interpret() 
     
 
 if __name__ == '__main__':
