@@ -46,11 +46,13 @@ class VarSymbol(Symbol):
 class SymbolTable(object):
     def __init__(self):
         self._symbols = {}
+        self._init_builtin_types()
 
     def _init_builtin_types(self):
-        self.insert(BuiltinTypeSymbol('INTEGER'))
-        self.insert(BuiltinTypeSymbol('FLOAT'))
-        self.insert(BuiltinTypeSymbol('STRING'))
+        self.insert(BuiltinTypeSymbol('int'))
+        self.insert(BuiltinTypeSymbol('float'))
+        self.insert(BuiltinTypeSymbol('str'))
+        self.insert(BuiltinTypeSymbol('bool'))
 
     # Nice way to print the contents of the symbol table
     def __str__(self):

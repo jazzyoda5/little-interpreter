@@ -1,5 +1,7 @@
 from interpreter import NodeVisitor
+import inspect
 from symtab_builder import SymbolTable, VarSymbol
+from parser import UnaryOp, BinOp
 
 # Semantic Analyzer traverses the syntax tree 
 # and checks for invalid variable declarations 
@@ -7,6 +9,9 @@ from symtab_builder import SymbolTable, VarSymbol
 class SemanticAnalyser(NodeVisitor):
     def __init__(self):
         self.symbol_table = SymbolTable()
+
+        # Set a global scope to be able to go through the tree
+        self.GLOBAL_SCOPE = {}
 
     # This is the important part for type checking,
     # Other functions are written so that
@@ -16,7 +21,18 @@ class SemanticAnalyser(NodeVisitor):
         var_type = node.type.value
 
         # Value stored in the variable
-        var_value = node.value.value
+        try:
+            var_value = node.value.value
+
+        # !! Can also be a BinOp or UnaryOp
+        except AttributeError:
+            var_value = node.value
+            
+            if isinstance(var_value, UnaryOp) or isinstance(var_value, BinOp):
+                var_value = self.visit(node.value)
+            else:
+                self.type_error()
+
 
         # Type of value stored in variable
         var_value_type = type(var_value).__name__
@@ -25,15 +41,16 @@ class SemanticAnalyser(NodeVisitor):
         if var_value_type != var_type:
             self.type_error()
 
+
         # Get the matching built-in type
         if var_type == 'int':
-            type1 = self.symbol_table.get_symbol('INTEGER')
+            type1 = self.symbol_table.get_symbol('int')
         elif var_type == 'str':
-            type1 = self.symbol_table.get_symbol('STRING')
+            type1 = self.symbol_table.get_symbol('str')
         elif var_type == 'float':
-            type1 = self.symbol_table.get_symbol('FLOAT')
+            type1 = self.symbol_table.get_symbol('float')
         elif var_type == 'bool':
-            type1 = self.symbol_table.get_symbol('BOOL')
+            type1 = self.symbol_table.get_symbol('bool')
         else:
             raise Exception('Unsupported type declaration.')
         
@@ -42,7 +59,8 @@ class SemanticAnalyser(NodeVisitor):
         var_symbol = VarSymbol(var_name, type1)
 
         # Check if this variable was previously declared
-        if self.symbol_table.get_symbol(var_name) is not None:
+        var_in_symtab = self.symbol_table.get_symbol(var_name)
+        if var_in_symtab is not None:
             raise Exception(
                 'DeclarationError: Duplicate assignment.'
             )
@@ -50,8 +68,13 @@ class SemanticAnalyser(NodeVisitor):
         # Insert in symbol table
         self.symbol_table.insert(var_symbol)
 
+        # Global scope?
+        var_name = node.name.value
+        self.GLOBAL_SCOPE[var_name] = self.visit(node.value)
+
 
     def visit_BinOp(self, node):
+        print(node.left)
         if node.op.type == 'PLUS':
             return self.visit(node.left) + self.visit(node.right)
         elif node.op.type == 'MINUS':
@@ -87,9 +110,9 @@ class SemanticAnalyser(NodeVisitor):
     # b = -a;
     def visit_UnaryOp(self, node):
         op = node.op.type
-        if op == PLUS:
+        if op == 'PLUS':
             return +self.visit(node.expr)
-        elif op == MINUS:
+        elif op == 'MINUS':
             return -self.visit(node.expr)
 
     def visit_Block(self, node):
@@ -107,8 +130,13 @@ class SemanticAnalyser(NodeVisitor):
         if var_symbol is None:
             raise Exception("DeclarationError: Variable not defined.")
 
-        varsym_type = var_symbol.type
-        
+        # To keep going through the tree
+        var_name = node.value
+        value = self.GLOBAL_SCOPE.get(var_name)
+        if value is None:
+            raise NameError('Variable "{}" is not defined'.format(var_name))
+        else:
+            return value
 
     def visit_Value(self, node):
         return node.value
@@ -120,4 +148,4 @@ class SemanticAnalyser(NodeVisitor):
             pass
 
     def type_error(self):
-        raise Exception("TypeError: Incorrect type declaration.")
+        raise Exception("TypeError: Invalid assignment.")

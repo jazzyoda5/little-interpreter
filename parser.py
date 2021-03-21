@@ -1,4 +1,4 @@
-from lexer import types
+from lexer import types, Token
 
 
 class AST(object):
@@ -39,11 +39,10 @@ class Block(AST):
 
 
 class Assign(AST):
-    def __init__(self, name, type=None, value):
+    def __init__(self, name, value, type=None):
         self.name = name
         self.type = type
         self.value = value
-
 
 class Var(AST):
     def __init__(self, token):
@@ -170,7 +169,18 @@ class Parser(object):
         # That variable was already previously defined
         # and that this statement only changes the value and not the type
         if self.curr_token.type == 'EQUAL':
-            
+            self.eat('EQUAL')
+
+            if self.curr_token.type == 'BOOL':
+                value = Value(self.curr_token.value)
+                type_token = Token(value='bool', token_type='TYPE')
+                node = Assign(name=name, value=value, type=type_token)
+                self.eat('BOOL')
+            else:
+                node = self.expr()
+
+            return node
+
 
         # Type must be declared ->
         self.eat('COLON')
@@ -191,7 +201,7 @@ class Parser(object):
         else:
             value = self.expr()
 
-        node = Assign(name, var_type, value)
+        node = Assign(name, value, var_type)
         return node
 
     def factor(self):
@@ -323,8 +333,10 @@ class Parser(object):
         elif self.curr_token.type == 'NAME':
             node = self.variable()
         else:
+            print('hir')
             node = self.comparison()
 
+        print('token: ', self.curr_token)
         self.eat('RPAREN')
 
         return node

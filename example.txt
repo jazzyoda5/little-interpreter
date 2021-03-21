@@ -1,4 +1,6 @@
-variable: bool = True;
-if (variable) {
-    print("Hey");
-}
+c: int = 34 + 12;
+d: int = c + 8;
+print(c);
+print(d);
+astr: str = "Yooo";
+print(astr);

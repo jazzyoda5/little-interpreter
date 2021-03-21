@@ -23,6 +23,11 @@ if (variable < var) {
 }
 print("Another print for the lolz!");
 ```
+or
+```
+a: str = "Hi!";
+print(a);
+```
 
 ---
 SOME RULES

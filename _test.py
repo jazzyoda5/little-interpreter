@@ -1,4 +1,8 @@
+import pytest
+import os
 from lexer import Lexer, Token
+import parser
+from interpreter import Interpreter
 
 
 ##################################
@@ -80,6 +84,44 @@ def test_name():
     assert token3.type == 'NAME'
     assert token3.value == 'a'
 
+
+##################################
+# PARSER TESTS
+##################################
+
+def get_ast(text):
+    lexer = Lexer(text)
+    parser_obj = parser.Parser(lexer)
+    tree = parser_obj.parse()
+    return tree
+
+
+def get_parser(text):
+    lexer = Lexer(text)
+    parser_obj = parser.Parser(lexer)
+    return parser_obj
+
+
+# Opens and reads an example file
+def get_example(id):
+    file_name = str(id) + '.txt'
+    f = open(os.path.dirname(os.path.abspath(__file__)) + '/test_examples/' + file_name, 'r')
+    return f.read()
+
+
+def test_parser_print(file_id=1):
+    text = get_example(file_id)
+    tree = get_ast(text)
+    
+    assert isinstance(tree, parser.Block)
+    assert tree.children is not None
+
+    node = tree.children[0]
+    assert  isinstance(node, parser.Print)
+
+    # Print object has an expr attribute -> item or expression you want to output
+    expr = node.expr
+    assert expr
 
 
     

@@ -63,9 +63,9 @@ class Interpreter(NodeVisitor):
     # b = -a;
     def visit_UnaryOp(self, node):
         op = node.op.type
-        if op == PLUS:
+        if op == 'PLUS':
             return +self.visit(node.expr)
-        elif op == MINUS:
+        elif op == 'MINUS':
             return -self.visit(node.expr)
 
     def visit_Block(self, node):
@@ -77,7 +77,6 @@ class Interpreter(NodeVisitor):
         pass
 
     def visit_Assign(self, node):
-        print('type: ', node.type.value)
         var_name = node.name.value
         self.GLOBAL_SCOPE[var_name] = self.visit(node.value)
 
