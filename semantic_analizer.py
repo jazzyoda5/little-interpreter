@@ -1,17 +1,16 @@
 from interpreter import NodeVisitor
 import inspect
-from symtab_builder import SymbolTable, VarSymbol
-from parser import UnaryOp, BinOp
+from symtab_builder import SymbolTable, VarSymbol, FunctionSymbol
+from parser import UnaryOp, BinOp, Var
 
 # Semantic Analyzer traverses the syntax tree 
 # and checks for invalid variable declarations 
 # or invalid use of different types
 class SemanticAnalyser(NodeVisitor):
     def __init__(self):
-        self.symbol_table = SymbolTable()
-
-        # Set a global scope to be able to go through the tree
-        self.GLOBAL_SCOPE = {}
+        self.symbol_table = None
+        self.global_scope = True
+        self.current_scope = None
 
     # This is the important part for type checking,
     # Other functions are written so that
@@ -23,6 +22,9 @@ class SemanticAnalyser(NodeVisitor):
         # Value stored in the variable
         try:
             var_value = node.value.value
+
+            # You should be able to assign one 
+            # variable to another like so -> a: int = b;
 
         # !! Can also be a BinOp or UnaryOp
         except AttributeError:
@@ -74,7 +76,6 @@ class SemanticAnalyser(NodeVisitor):
 
 
     def visit_BinOp(self, node):
-        print(node.left)
         if node.op.type == 'PLUS':
             return self.visit(node.left) + self.visit(node.right)
         elif node.op.type == 'MINUS':
@@ -102,6 +103,38 @@ class SemanticAnalyser(NodeVisitor):
         elif node.op.type == 'GRTHAN':
             return left > right
 
+    def visit_FuncDecl(self, node):
+        func_name = node.func_name
+        func_symbol = FunctionSymbol(func_name, block_node=None)
+        self.current_scope.insert(func_symbol)
+
+        # Enter function's scope
+        function_scope = SymbolTable(
+            scope_name=func_name,
+            scope_level=self.current_scope.scope_level + 1,
+            parent_scope=self.current_scope
+        )
+        self.current_scope = function_scope
+
+        # Get parameters for the function
+        for param in node.params:
+            # Lookup the type in built-in types
+            param_type = self.current_scope.lookup(param.type_node.value)
+            # Param variable name
+            param_name = param.var_node.value
+            var_symbol = VarSymbol(param_name, param_type)
+            self.current_scope.insert(var_symbol)
+            # Add param to function symbol
+            func_symbol.params.append(var_symbol)
+
+        #####################
+        # Run block here?
+        #####################
+        block_node = node.block_node
+        func_symbol.block = block_node
+
+        self.current_scope = self.current_scope.parent_scope
+
     def visit_Number(self, node):
         return node.value
 
@@ -116,8 +149,18 @@ class SemanticAnalyser(NodeVisitor):
             return -self.visit(node.expr)
 
     def visit_Block(self, node):
+        if self.global_scope == True:
+            global_symtab = SymbolTable(
+                scope_name='global',
+                scope_level=1
+            )
+            self.current_scope = global_symtab
+            self.global_scope = False
+
         for child in node.children:
             self.visit(child)
+        
+        self.current_scope = self.current_scope.parent_scope
 
     def visit_Empty(self, node):
         # If statement is empty, do nothing

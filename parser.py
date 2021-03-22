@@ -1,6 +1,10 @@
 from lexer import types, Token
 
 
+#########################################
+# AST NODES
+#########################################
+
 class AST(object):
     pass
 
@@ -69,31 +73,27 @@ class IfStatement(AST):
         self.elseblock = elseblock
 
 
+class Param(AST):
+    def __init__(self, var_node, type_node):
+        self.var_node = var_node
+        self.type_node = type_node
+
+
+class FuncDecl(AST):
+    def __init__(self, func_name, params, block_node):
+        self.func_name = func_name
+        self.params = params # This is a list of parameter nodes
+        self.block_node = block_node
+
+
 class Empty(AST):
     pass
 
 
-"""
-GRAMMAR ->
+#########################################
+# PARSER
+#########################################
 
-block  :  compound_statement
-compound_statement  :  statement_list
-statement_list  :  statement SCOLON
-                   statement SCOLON statement_list
-statement  =  block
-              assignment
-              empty
-assignment  :  variable COLON TYPE EQUAL expr
-var_value_change  :  variable EQUAL VALUE | expr
-expr   : term ((PLUS | MINUS) term)*
-term   : factor ((MUL | DIV) factor)*
-factor : (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN | variable
-variable  :  NAME
-print  :  PRINT (expr | STRING | BOOL)
-ifelse  :  IF comparison LBRACE block RBRACE (ELSE LBRACE block RBRACE)
-comparison  :  variable | VALUE | expr op expr
-op  :  GRTHAN | LSTHAN
-"""
 
 class Parser(object):
     def __init__(self, lexer):
@@ -108,6 +108,7 @@ class Parser(object):
         if self.curr_token.type == token_type:
             self.curr_token = self.lexer.get_next_token()
         else:
+            print('token on error: ', self.curr_token)
             self.error()
 
     def block(self):
@@ -124,16 +125,12 @@ class Parser(object):
         return root
 
     def statement_list(self):
-        node = self.statement()
-        results = [node]
-        self.eat('SCOLON')
-
+        results = []
         while True:
             statement = self.statement()
             results.append(statement)
-
-            if isinstance(statement, IfStatement):
-                # if-else block doesn't require
+            if isinstance(statement, IfStatement) or isinstance(statement, FuncDecl):
+                # if-else and function block don't require
                 # a closing semicolon -> ';'
                 pass
             elif self.curr_token.type != 'SCOLON':
@@ -148,15 +145,19 @@ class Parser(object):
         return results
 
     def statement(self):
-        if self.curr_token.type == 'NAME':  
+        token = self.curr_token
+
+        if token.type == 'NAME':  
             node = self.assignment()
 
-        elif self.curr_token.type == 'PRINT':
+        elif token.type == 'PRINT':
             node = self.print()
             
-        elif self.curr_token.type == 'IF':
+        elif token.type == 'IF':
             node = self.ifelse()
-            
+
+        elif token.type == 'FUNCDECL':
+            node = self.functiondecl()
         else:
             node = self.empty()
         
@@ -224,8 +225,7 @@ class Parser(object):
         elif token.type == 'LPAREN':
             node = self.expr()
             self.eat(types['('])
-            return node
-        
+            return node  
         
         else:
             node = self.variable()
@@ -327,22 +327,24 @@ class Parser(object):
     # should run
     def ifstatement(self):
         self.eat('LPAREN')
-        if self.curr_token.type == 'BOOL':
-            node = Value(value=self.curr_token.value)
-            self.eat('BOOL')
-        elif self.curr_token.type == 'NAME':
-            node = self.variable()
-        else:
-            print('hir')
-            node = self.comparison()
-
-        print('token: ', self.curr_token)
+        node = self.comparison()
         self.eat('RPAREN')
 
         return node
 
     def comparison(self):
-        left = self.expr()
+
+        # if (True) {}
+        if self.curr_token.type == 'BOOL':
+            node = Value(value=self.curr_token.value)
+            self.eat('BOOL')
+            return node
+
+        # Left side of comparison is variable
+        if self.curr_token.type == 'NAME':
+            left = self.variable()
+        else:
+            left = self.expr()
 
         if self.curr_token.type == 'LSTHAN':
             op = self.curr_token
@@ -350,12 +352,75 @@ class Parser(object):
         elif self.curr_token.type == 'GRTHAN':
             op = self.curr_token
             self.eat('GRTHAN')
+        elif self.curr_token.type == 'DBLEQUAL':
+            op = self.curr_token
+            self.eat('DBLEQUAL')
         else:
             self.error()
 
-        node = Comparison(left=left, op=op, right=self.expr())
+        if self.curr_token.type == 'NAME':
+            right = self.variable()
+        else:
+            right = self.expr()
+
+        node = Comparison(left=left, op=op, right=right)
         return node
         
+
+    def functiondecl(self):
+        self.eat('FUNCDECL')
+
+        # Function name
+        name = self.curr_token.value
+        self.eat('NAME')
+
+        # Function paramters
+        params = self.params()
+
+        # Code block
+        self.eat('LBRACE')
+        block = self.block()
+        self.eat('RBRACE')
+
+        function = FuncDecl(
+            func_name=name,
+            params=params,
+            block_node=block 
+        )
+
+        return function
+
+
+    def params(self):
+        self.eat('LPAREN')
+
+        params = []
+        while True:
+
+            if self.curr_token.type == 'COMMA':
+                continue
+            elif self.curr_token.type == 'RPAREN':
+                self.eat('RPAREN')
+                break
+            elif self.curr_token.type == 'NAME':
+                param = self.param()
+                params.append(param)
+            else:
+                self.error()
+        
+        return params
+
+    def param(self):
+        token = self.curr_token
+        name = Var(token=token)
+        self.eat('NAME')
+        self.eat('COLON')
+
+        token = self.curr_token
+        type_var = Var(token=token)
+        self.eat('TYPE')
+
+        return Param(var_node=name, type_node=type_var)
 
     
     def parse(self):

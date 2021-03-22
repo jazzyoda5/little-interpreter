@@ -1,0 +1,38 @@
+GRAMMAR ->
+
+block  :  compound_statement
+compound_statement  :  statement_list
+statement_list  :  statement SCOLON
+                   | statement SCOLON statement_list
+statement  =  block
+              | assignment
+              | function_declaration
+              | empty
+assignment  :  variable COLON TYPE EQUAL expr 
+                                         | variable
+function_declaration  :  FUNCDECL NAME RPAREN (parameter (COMMA parameter)*) LBRACE block (RETURN RPAREN (parameter) LPAREN) RBRACE
+parameters  :  parameter
+               | parameter COMMA parameters
+var_value_change  :  variable EQUAL VALUE | expr
+expr   : term ((PLUS | MINUS) term)*
+term   : factor ((MUL | DIV) factor)*
+factor : (PLUS | MINUS) factor 
+         | INTEGER 
+         | LPAREN expr RPAREN 
+         | variable
+variable  :  NAME
+print  :  PRINT (expr | STRING | BOOL)
+ifelse  :  IF comparison LBRACE block RBRACE (ELSE LBRACE block RBRACE)
+comparison  :  variable 
+               | VALUE 
+               | (variable | expr) op (variable | expr)
+op  :  GRTHAN 
+       | LSTHAN
+
+
+Reading grammar {
+    - | means or
+    - Anything in () is optional
+    - If statement has * appended to it, it means it can repeat multiple timesince
+    - CAPS terms are end nodes and lowercase terms are upper nodes
+}

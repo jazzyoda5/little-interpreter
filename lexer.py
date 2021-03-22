@@ -17,7 +17,9 @@ types = {
     '<': 'LSTHAN',
     'id': 'ID',
     ':': 'COLON',
-    'type_decl': 'TYPE'
+    'type_decl': 'TYPE',
+    # Double equal is used for comparison
+    # Single equal is used for assignment
 }
 
 # Special reserved words
@@ -30,6 +32,8 @@ reserved_names = {
     'bool': 'TYPE',
     'True': 'BOOL',
     'False': 'BOOL',
+    'function': 'FUNCDECL',
+    'return': 'RETURN'
 }
 
 
@@ -81,6 +85,15 @@ class Lexer(object):
             # Might be ELSE, IF, or NAME
             token = self.name()
             return token
+
+        if self.current_char == '=':
+            next_char = self.peek()
+
+            if next_char == '=':
+                token = Token('DBLEQUAL', '==')
+                for _ in range(2):
+                    self.advance()
+                return token
 
         if self.current_char in types:
             token = Token(types[self.current_char], self.current_char)

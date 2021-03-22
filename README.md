@@ -11,7 +11,7 @@ if (a > 2) {
 or 
 ```
 variable: int = 3 * 3 - 6;
-var: int = 70 / 10;
+var: int = 70;
 /*
 I am a
 multiline comment
@@ -46,6 +46,9 @@ and not like this -> 'string'
 ---
 To build:
 - Variable declarations? -> a: int = 3;
+- Nested scopes
+- Function declarations
+- Function calls
 
 
 

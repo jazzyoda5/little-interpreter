@@ -121,8 +121,8 @@ def main():
         token = lexer_check.get_next_token()
         print(token)
         if token.type == 'EOF':
-            break    
-    """
+            break  
+    """  
     
     lexer = Lexer(text)
     parser = Parser(lexer)

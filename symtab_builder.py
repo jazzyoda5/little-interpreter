@@ -43,10 +43,22 @@ class VarSymbol(Symbol):
     __repr__ = __str__
 
 
+class FunctionSymbol(Symbol):
+    def __init__(self, name, block_node, params=None):
+        super(FunctionSymbol, self).__init__(name)
+        self.params = params if params is not None else []
+        self.block = block_node
+
+
+# Each scope has it's own Symbol Table and each 
+# Symbol Table points to the table one level higher
 class SymbolTable(object):
-    def __init__(self):
+    def __init__(self, scope_name, scope_level, parent_scope=None):
         self._symbols = {}
         self._init_builtin_types()
+        self.scope_level = scope_level
+        self.scope_name = scope_name
+        self.parent_scope = parent_scope
 
     def _init_builtin_types(self):
         self.insert(BuiltinTypeSymbol('int'))
