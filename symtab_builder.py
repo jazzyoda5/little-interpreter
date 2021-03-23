@@ -87,3 +87,10 @@ class SymbolTable(object):
         symbol = self._symbols.get(name)
         return symbol
 
+        if symbol is not None:
+            return symbol
+
+        # recursively go up the chain and lookup the name
+        if self.enclosing_scope is not None:
+            return self.enclosing_scope.lookup(name)
+

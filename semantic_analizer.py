@@ -8,7 +8,6 @@ from parser import UnaryOp, BinOp, Var
 # or invalid use of different types
 class SemanticAnalyser(NodeVisitor):
     def __init__(self):
-        self.symbol_table = None
         self.global_scope = True
         self.current_scope = None
 
@@ -46,13 +45,13 @@ class SemanticAnalyser(NodeVisitor):
 
         # Get the matching built-in type
         if var_type == 'int':
-            type1 = self.symbol_table.get_symbol('int')
+            type1 = self.current_scope.get_symbol('int')
         elif var_type == 'str':
-            type1 = self.symbol_table.get_symbol('str')
+            type1 = self.current_scope.get_symbol('str')
         elif var_type == 'float':
-            type1 = self.symbol_table.get_symbol('float')
+            type1 = self.current_scope.get_symbol('float')
         elif var_type == 'bool':
-            type1 = self.symbol_table.get_symbol('bool')
+            type1 = self.current_scope.get_symbol('bool')
         else:
             raise Exception('Unsupported type declaration.')
         
@@ -61,18 +60,14 @@ class SemanticAnalyser(NodeVisitor):
         var_symbol = VarSymbol(var_name, type1)
 
         # Check if this variable was previously declared
-        var_in_symtab = self.symbol_table.get_symbol(var_name)
+        var_in_symtab = self.current_scope.get_symbol(var_name)
         if var_in_symtab is not None:
             raise Exception(
                 'DeclarationError: Duplicate assignment.'
             )
         
         # Insert in symbol table
-        self.symbol_table.insert(var_symbol)
-
-        # Global scope?
-        var_name = node.name.value
-        self.GLOBAL_SCOPE[var_name] = self.visit(node.value)
+        self.current_scope.insert(var_symbol)
 
 
     def visit_BinOp(self, node):
@@ -168,14 +163,14 @@ class SemanticAnalyser(NodeVisitor):
 
     def visit_Var(self, node):
         var_name = node.value
-        var_symbol = self.symbol_table.get_symbol(var_name)
+        var_symbol = self.current_scope.get_symbol(var_name)
 
         if var_symbol is None:
             raise Exception("DeclarationError: Variable not defined.")
 
         # To keep going through the tree
         var_name = node.value
-        value = self.GLOBAL_SCOPE.get(var_name)
+        value = self.current_scope.get(var_name)
         if value is None:
             raise NameError('Variable "{}" is not defined'.format(var_name))
         else:
